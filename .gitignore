@@ -10,3 +10,6 @@ typechain-types
 .DS_Store
 coverage
 .data
+deployments.*.json
+.data/
+.env
