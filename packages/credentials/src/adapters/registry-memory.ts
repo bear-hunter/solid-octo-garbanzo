@@ -10,7 +10,7 @@ export class MemoryRegistryAdapter implements RegistryAdapter {
   private institutions = new Set<string>();
   private credentials = new Map<string, OnChainCredential>();
 
-  async registerInstitution(did: string): Promise<ChainReceipt> {
+  async registerInstitution(did: string, _name: string): Promise<ChainReceipt> {
     this.institutions.add(did);
     return { mode: this.mode, simulated: true };
   }
