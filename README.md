@@ -28,7 +28,7 @@ automatically.
 
 - `pnpm install`
 - `pnpm chain` — local Hardhat node
-- `pnpm deploy` — deploy both contracts to the local node (writes `deployments.localhost.json`)
+- `pnpm run deploy` — deploy both contracts to the local node (writes `deployments.localhost.json`)
 - `pnpm ipfs` — local Kubo IPFS node via Docker
 - `pnpm dev` — Next.js app and API
 - `pnpm test` — credential and adapter unit tests
@@ -42,7 +42,7 @@ automatically.
 ```
 pnpm install
 pnpm chain        # terminal 1
-pnpm deploy       # terminal 2, once the node is up
+pnpm run deploy   # terminal 2, once the node is up
 pnpm ipfs         # terminal 3 (optional; falls back to local storage)
 pnpm dev          # terminal 4
 ```

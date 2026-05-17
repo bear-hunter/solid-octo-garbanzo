@@ -1,6 +1,6 @@
-import hre from "hardhat";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+const hre = require("hardhat");
+const { writeFileSync } = require("node:fs");
+const { join } = require("node:path");
 
 async function main() {
   const Institutions = await hre.ethers.getContractFactory("InstitutionRegistry");
