@@ -45,8 +45,12 @@ export default function HolderPage() {
     const share = await api("/api/share-links", { credentialId: row.id });
     const url = `${location.origin}${share.url}`;
     setShareUrl(url);
-    await navigator.clipboard.writeText(url);
-    setMessage("Verifier link copied to clipboard.");
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage("Verifier link copied to clipboard.");
+    } catch {
+      setMessage("Verifier link created (copy it manually below).");
+    }
   }
 
   return (

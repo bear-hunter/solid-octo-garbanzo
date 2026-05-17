@@ -153,7 +153,7 @@ pre {
   position: absolute; top: 1.4rem; right: 1.6rem;
   width: 3.4rem; height: 3.4rem; border-radius: 50%;
   border: 2px solid var(--gold); display: grid; place-items: center;
-  font-family: var(--serif); color: var(--gold); font-size: 0.7rem; text-align: center;
+  font-family: var(--serif); color: var(--gold); font-size: 1.15rem; font-weight: 600; letter-spacing: 0.05em; text-align: center;
 }
 .diploma .issuer { font-family: var(--serif); font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
 .diploma .degree { font-family: var(--serif); font-size: 1.7rem; margin: 0.5rem 0 0.1rem; }

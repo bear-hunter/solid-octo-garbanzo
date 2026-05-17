@@ -19,7 +19,7 @@ export default function DiplomaCard({
   const subject = credential.credentialSubject;
   return (
     <div className="diploma">
-      <div className="seal">SEAL</div>
+      <div className="seal">CV</div>
       <div className="issuer">Issued under {credential.issuer.slice(0, 22)}…</div>
       <div className="degree">{subject.degree}</div>
       <div className="muted" style={{ marginBottom: "0.6rem" }}>
