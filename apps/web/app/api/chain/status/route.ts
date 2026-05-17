@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getService } from "../../../../lib/service-instance";
 
-export async function POST() {
+export async function GET() {
   const service = await getService();
-  return NextResponse.json(await service.seedPresentationRecords());
+  return NextResponse.json(await service.chainStatus());
 }

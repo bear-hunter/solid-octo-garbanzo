@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { credentials } from "../_store";
+import { getService } from "../../../lib/service-instance";
 
-export async function GET(){
-  return NextResponse.json([...credentials.values()].map(({ jwt, credential, ...row }) => ({ ...row, credential, jwt })));
+export async function GET() {
+  const service = await getService();
+  return NextResponse.json(service.listCredentials());
 }

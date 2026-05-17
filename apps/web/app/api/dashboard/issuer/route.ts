@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { issuerDashboard } from "../../_store";
+import { getService } from "../../../../lib/service-instance";
 
 export async function GET() {
-  return NextResponse.json(issuerDashboard());
+  const service = await getService();
+  return NextResponse.json(service.issuerDashboard());
 }
