@@ -32,8 +32,6 @@ export type CredentialRecord = { id: string; jwt: string; credential: AcademicCr
 export type AuditEvent = { id: string; credentialId: string; type: string; actor: string; note: string; createdAt: string; metadata?: Record<string, unknown> };
 export type VerificationCheck = { status: VerificationStatus; score: number; checkedAt: string; reasons: string[] };
 export type CredentialSharePayload = { id?: string; cid?: string; jwt?: string; shareId?: string };
-export type RegistryAdapter = { registerCredential(record: { credentialHash: string; cid: string; issuerDid: string; subjectDidHash: string }): Promise<void>; revokeCredential(credentialHash: string, reason: string): Promise<void>; getCredential(credentialHash: string): Promise<{ credentialHash: string; cid: string; issuerDid: string; revoked: boolean } | undefined> };
-export type CredentialStorageAdapter = { addCredential(credential: AcademicCredential): Promise<{ cid: string; hash: string }>; getCredential(cid: string): Promise<AcademicCredential | undefined> };
 
 const enc = new TextEncoder();
 export function canonicalJson(value: unknown): string { return JSON.stringify(value, Object.keys(flattenKeys(value)).sort()); }
@@ -88,3 +86,5 @@ export async function verifyCredential(input: { jwt?: string; credential?: Acade
   const status: VerificationStatus = input.revoked ? "revoked" : reasons.some(r=>r.includes("Issuer")) ? "unknownIssuer" : reasons.some(r=>r.includes("hash") || r.includes("CID")) ? "tampered" : reasons.length ? "invalid" : "valid";
   return { status, valid: status === "valid", score, breakdown, reasons, credential };
 }
+
+export * from "./adapters";
