@@ -35,9 +35,12 @@ export class EthersRegistryAdapter implements RegistryAdapter {
   constructor(private readonly config: EthersRegistryConfig) {
     this.mode = config.mode;
     this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
-    const wallet = new ethers.Wallet(config.privateKey, this.provider);
-    this.institutions = new ethers.Contract(config.institutionRegistry, INSTITUTION_ABI, wallet);
-    this.credentials = new ethers.Contract(config.credentialRegistry, CREDENTIAL_ABI, wallet);
+    // NonceManager tracks the nonce locally so transactions sent back-to-back
+    // (e.g. registerInstitution then registerCredential during issuance) each
+    // get a sequential nonce instead of racing on the node's pending count.
+    const signer = new ethers.NonceManager(new ethers.Wallet(config.privateKey, this.provider));
+    this.institutions = new ethers.Contract(config.institutionRegistry, INSTITUTION_ABI, signer);
+    this.credentials = new ethers.Contract(config.credentialRegistry, CREDENTIAL_ABI, signer);
   }
 
   private receipt(tx: ethers.ContractTransactionReceipt | null): ChainReceipt {
