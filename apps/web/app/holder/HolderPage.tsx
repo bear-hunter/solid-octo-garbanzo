@@ -1,18 +1,126 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import DiplomaCard from "../components/DiplomaCard";
+import CopyButton from "../components/CopyButton";
 
-type CredentialRow = { id: string; jwt: string; credential: any; cid: string; hash: string; revoked?: boolean; reason?: string };
-async function api(path: string, body?: unknown) { const res = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined); const json = await res.json(); if (!res.ok) throw new Error(json.error ?? "Request failed"); return json; }
+type CredentialRow = {
+  id: string;
+  jwt: string;
+  cid: string;
+  hash: string;
+  revoked?: boolean;
+  credential: { issuer: string; credentialSubject: { name: string; degree: string; major: string; graduationDate: string; gpa?: number } };
+  chain?: { mode: string; blockNumber?: number };
+  storageMode?: string;
+};
 
-export default function HolderPage(){
-  const [credentials,setCredentials]=useState<CredentialRow[]>([]); const [selected,setSelected]=useState(""); const [message,setMessage]=useState("");
-  async function refresh(){ const rows=await api("/api/credentials"); setCredentials(rows); setSelected(v=>v || rows[0]?.id || ""); }
-  useEffect(()=>{ refresh().catch(()=>undefined); }, []);
-  const row=useMemo(()=>credentials.find(c=>c.id===selected),[credentials,selected]);
-  async function seed(){ await api("/api/demo/reset",{}); await refresh(); setMessage("Demo credential loaded."); }
-  async function revoke(){ if(!row)return; await api("/api/credentials/revoke",{id:row.id,reason:"Credential revoked by institution"}); await refresh(); setMessage("Credential revoked."); }
-  async function copyJwt(){ if(!row)return; await navigator.clipboard.writeText(row.jwt); setMessage("JWT copied to clipboard."); }
-  async function copyShare(){ if(!row)return; const share=await api("/api/share-links",{credentialId:row.id}); const url=`${location.origin}${share.url}`; await navigator.clipboard.writeText(url); setMessage(`Verifier link copied: ${url}`); }
-  return <main><h1>Student Wallet</h1><p className="muted">Holder keeps issued credential JWTs, CIDs, hashes, and verifier share links.</p>{message&&<div className="notice">{message}</div>}<button onClick={seed}>Load Presentation Records</button><section className="card"><h2>My Credentials</h2>{credentials.length===0?<p>No credentials yet. Go to Issue, or load presentation records.</p>:<><select value={selected} onChange={e=>setSelected(e.target.value)}>{credentials.map(c=><option key={c.id} value={c.id}>{c.credential.credentialSubject.name} — {c.revoked?"revoked":"active"}</option>)}</select>{row&&<><p><b>Status:</b> <span className={row.revoked?"bad":"ok"}>{row.revoked?"Revoked":"Active"}</span></p><p><b>CID:</b> {row.cid}</p><p><b>Hash:</b> {row.hash}</p><button onClick={copyJwt}>Copy JWT</button><button onClick={copyShare}>Copy Verifier Link</button><button className="danger" onClick={revoke}>Revoke Credential</button><h3>Human-Readable Credential</h3><div className="grid"><p><b>Student:</b> {row.credential.credentialSubject.name}</p><p><b>Degree:</b> {row.credential.credentialSubject.degree}</p><p><b>Major:</b> {row.credential.credentialSubject.major}</p><p><b>Graduation:</b> {row.credential.credentialSubject.graduationDate}</p></div><h3>Credential JSON</h3><pre>{JSON.stringify(row.credential,null,2)}</pre><h3>JWT</h3><pre>{row.jwt}</pre></>}</>}</section></main>;
+async function api(path: string, body?: unknown) {
+  const res = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "Request failed");
+  return json;
+}
+
+export default function HolderPage() {
+  const [rows, setRows] = useState<CredentialRow[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function refresh() {
+    const data: CredentialRow[] = await api("/api/credentials");
+    setRows(data);
+    setSelectedId((v) => v || data[0]?.id || "");
+  }
+
+  useEffect(() => {
+    refresh().catch((e) => setMessage(e.message));
+  }, []);
+
+  const row = useMemo(() => rows.find((r) => r.id === selectedId), [rows, selectedId]);
+
+  async function makeShare() {
+    if (!row) return;
+    const share = await api("/api/share-links", { credentialId: row.id });
+    const url = `${location.origin}${share.url}`;
+    setShareUrl(url);
+    await navigator.clipboard.writeText(url);
+    setMessage("Verifier link copied to clipboard.");
+  }
+
+  return (
+    <>
+      <section className="intro">
+        <h1>Credential Wallet</h1>
+        <p>Your credentials live here as portable, self-sovereign diplomas. Share a verifier link — no university lookup required.</p>
+      </section>
+
+      {message && <div className="notice">{message}</div>}
+
+      <div className="btn-row">
+        <button className="gold" onClick={() => api("/api/demo/reset", {}).then(refresh).then(() => setMessage("Presentation records loaded."))}>
+          Load Presentation Records
+        </button>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="card" style={{ marginTop: "1.1rem" }}>
+          <p className="muted">No credentials yet. Issue one from the Issuer dashboard or load presentation records.</p>
+        </div>
+      ) : (
+        <section className="grid cols-2" style={{ marginTop: "1.1rem", alignItems: "start" }}>
+          <div className="stack">
+            <div className="card">
+              <label>Select credential</label>
+              <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+                {rows.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.credential.credentialSubject.name} — {r.credential.credentialSubject.degree} {r.revoked ? "(revoked)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {row && (
+              <DiplomaCard
+                credential={row.credential}
+                hash={row.hash}
+                status={row.revoked ? "revoked" : "valid"}
+                blockNumber={row.chain?.blockNumber}
+              />
+            )}
+          </div>
+
+          {row && (
+            <div className="card stack">
+              <h2>Portable Proof</h2>
+              <div>
+                <label>IPFS CID ({row.storageMode ?? "local"})</label>
+                <p className="mono">{row.cid}</p>
+              </div>
+              <div>
+                <label>Credential hash</label>
+                <p className="mono">{row.hash}</p>
+              </div>
+              <div>
+                <label>Signed credential (JWT)</label>
+                <p className="mono">{row.jwt.slice(0, 96)}…</p>
+              </div>
+              <div className="btn-row">
+                <CopyButton value={row.jwt} label="Copy JWT" />
+                <CopyButton value={row.cid} label="Copy CID" />
+                <button onClick={makeShare}>Create Verifier Link</button>
+              </div>
+              {shareUrl && (
+                <div>
+                  <label>Shareable verification link</label>
+                  <p className="mono">{shareUrl}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+    </>
+  );
 }
