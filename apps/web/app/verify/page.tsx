@@ -1,2 +1,5 @@
 import VerifyPage from "./VerifyPage";
-export default function Verify(){ return <VerifyPage />; }
+
+export default function Page() {
+  return <VerifyPage />;
+}
