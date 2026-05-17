@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env
+.env.*
+!.env.example
+artifacts
+cache
+typechain-types
+.DS_Store
+coverage
+.data
