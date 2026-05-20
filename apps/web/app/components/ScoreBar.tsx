@@ -4,12 +4,30 @@ const MAX: Breakdown = { schema: 15, issuer: 20, signature: 20, contentIntegrity
 const ORDER: Array<keyof typeof MAX> = ["signature", "issuer", "onChain", "revocation", "contentIntegrity", "schema"];
 const ROMAN = ["i.", "ii.", "iii.", "iv.", "v.", "vi."];
 const LABELS: Record<string, { label: string; sub: string }> = {
-  signature: { label: "Signature of the issuer", sub: "ed25519 over canonicalised payload" },
-  issuer: { label: "Issuer DID resolves on-chain", sub: "institutionRegistry.lookup() ↦ active" },
-  onChain: { label: "Hash anchored at block", sub: "credentialRegistry.anchorOf(jwt)" },
-  revocation: { label: "Not revoked", sub: "nullifier(jwt) ∉ revocationSet" },
-  contentIntegrity: { label: "Content matches anchored hash", sub: "sha256(canonical(vc)) ≡ anchored" },
-  schema: { label: "Schema & validity window", sub: "nbf ≤ now ≤ exp · W3C VC v2" },
+  signature: {
+    label: "Signed by the issuer",
+    sub: "Only the issuer's private key could have produced this signature — we verified it with their public key.",
+  },
+  issuer: {
+    label: "Issuer is authorised on-chain",
+    sub: "The signing institution's DID is registered active in the on-chain institution registry.",
+  },
+  onChain: {
+    label: "Storage address matches anchor",
+    sub: "The IPFS address we received is the same one the issuer recorded on the blockchain.",
+  },
+  revocation: {
+    label: "Not revoked",
+    sub: "The on-chain registry has no revocation entry for this credential.",
+  },
+  contentIntegrity: {
+    label: "Document is unaltered",
+    sub: "Re-hashing the document yields exactly the fingerprint anchored on-chain — no character changed since issuance.",
+  },
+  schema: {
+    label: "Well-formed credential",
+    sub: "Conforms to the W3C Verifiable Credential schema.",
+  },
 };
 
 export default function ScoreBar({ score, breakdown }: { score: number; breakdown?: Breakdown }) {
