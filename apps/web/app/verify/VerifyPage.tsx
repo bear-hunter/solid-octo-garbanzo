@@ -29,24 +29,6 @@ type CredentialRow = {
   credential: AcademicCredential;
 };
 
-type FieldDiff = { path: string; anchored: unknown; submitted: unknown };
-
-type VerificationEvidence = {
-  submittedHash: string;
-  anchoredHash: string;
-  hashesMatch: boolean;
-  submittedCid: string;
-  anchoredCid: string;
-  cidsMatch: boolean;
-  submittedIssuerDid: string;
-  registeredIssuerDid: string;
-  registeredIssuerName?: string;
-  issuerMatches: boolean;
-  revokedOnChain: boolean;
-  registryBlockNumber?: number;
-  diff: FieldDiff[];
-};
-
 type VerifyResult = {
   status: string;
   valid: boolean;
@@ -54,7 +36,6 @@ type VerifyResult = {
   reasons: string[];
   breakdown?: Record<string, number>;
   credential?: { credentialSubject: { name: string; degree: string; major: string } };
-  evidence?: VerificationEvidence;
 };
 
 type AuditEvent = { id: string; type: string; note: string; createdAt: string };
@@ -314,16 +295,16 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
               </div>
 
               <div className="scenario-row">
-                <div className="scenario-label">Other forgery scenarios</div>
+                <div className="scenario-label">Or simulate other forgeries —</div>
                 <div className="btn-row">
-                  <button className="ghost" disabled={busy} onClick={forgeIssuer} title="Submits the credential with an issuer DID that isn't registered on-chain. Expected verdict: unknown issuer.">
-                    Forge the issuer
+                  <button className="ghost" disabled={busy} onClick={forgeIssuer} title="Replace the issuer DID with one that isn't registered on-chain">
+                    Forge issuer DID → unknown issuer
                   </button>
-                  <button className="ghost" disabled={busy} onClick={forgeStorageAddress} title="Submits with an IPFS address the issuer never anchored. Expected verdict: tampered (storage mismatch).">
-                    Forge the IPFS address
+                  <button className="ghost" disabled={busy} onClick={forgeStorageAddress} title="Submit with an IPFS address the issuer never anchored">
+                    Forge IPFS address → storage mismatch
                   </button>
-                  <button className="ghost" disabled={busy} onClick={submitMalformed} title="Strips a required field so the schema can't parse it. Expected verdict: invalid.">
-                    Strip a required field
+                  <button className="ghost" disabled={busy} onClick={submitMalformed} title="Strip a required field so the schema can't parse it">
+                    Strip a required field → invalid
                   </button>
                 </div>
               </div>
@@ -353,7 +334,6 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
               </div>
               <p className="verdict-narrative">{verdictNarrative(result.status)}</p>
               <ScoreBar score={result.score} breakdown={result.breakdown} />
-              {result.evidence && <EvidencePanel ev={result.evidence} />}
               <div>
                 <h3>Of the predicates that disagreed</h3>
                 {result.reasons.length === 0 ? (
@@ -391,100 +371,5 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
         </section>
       )}
     </>
-  );
-}
-
-function shortHash(h?: string) {
-  if (!h) return "—";
-  if (h.length <= 18) return h;
-  return `${h.slice(0, 14)}…${h.slice(-6)}`;
-}
-
-function formatVal(v: unknown) {
-  if (v === undefined) return <span className="muted">(missing)</span>;
-  if (v === null) return <span className="muted">null</span>;
-  if (typeof v === "string") return `"${v}"`;
-  return String(v);
-}
-
-function EvidencePanel({ ev }: { ev: VerificationEvidence }) {
-  const anyMismatch = !ev.hashesMatch || !ev.cidsMatch || !ev.issuerMatches || ev.revokedOnChain;
-  return (
-    <div className="evidence">
-      <h3>Cryptographic evidence</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
-        The verifier&apos;s decision is based entirely on the values below. The blockchain holds the
-        anchored side; the submitter provides the rest.
-      </p>
-
-      <div className="ev-row">
-        <span className="ev-label">Document hash</span>
-        <span className="ev-cmp">
-          <span className="ev-side"><span className="ev-side-tag">anchored on-chain</span><code>{shortHash(ev.anchoredHash)}</code></span>
-          <span className={`ev-eq ${ev.hashesMatch ? "ok" : "bad"}`}>{ev.hashesMatch ? "≡" : "≠"}</span>
-          <span className="ev-side"><span className="ev-side-tag">computed from submission</span><code>{shortHash(ev.submittedHash)}</code></span>
-        </span>
-      </div>
-
-      <div className="ev-row">
-        <span className="ev-label">IPFS address</span>
-        <span className="ev-cmp">
-          <span className="ev-side"><span className="ev-side-tag">anchored</span><code>{shortHash(ev.anchoredCid)}</code></span>
-          <span className={`ev-eq ${ev.cidsMatch ? "ok" : "bad"}`}>{ev.cidsMatch ? "≡" : "≠"}</span>
-          <span className="ev-side"><span className="ev-side-tag">submitted</span><code>{shortHash(ev.submittedCid)}</code></span>
-        </span>
-      </div>
-
-      <div className="ev-row">
-        <span className="ev-label">Issuer DID</span>
-        <span className="ev-cmp">
-          <span className="ev-side">
-            <span className="ev-side-tag">registered{ev.registeredIssuerName ? ` · ${ev.registeredIssuerName}` : ""}</span>
-            <code>{shortHash(ev.registeredIssuerDid)}</code>
-          </span>
-          <span className={`ev-eq ${ev.issuerMatches ? "ok" : "bad"}`}>{ev.issuerMatches ? "≡" : "≠"}</span>
-          <span className="ev-side"><span className="ev-side-tag">submitted</span><code>{shortHash(ev.submittedIssuerDid)}</code></span>
-        </span>
-      </div>
-
-      <div className="ev-row">
-        <span className="ev-label">On-chain status</span>
-        <span className={`ev-flag ${ev.revokedOnChain ? "bad" : "ok"}`}>
-          {ev.revokedOnChain ? "revoked" : "active"}
-          {ev.registryBlockNumber !== undefined && <span className="ev-block"> · anchored at block #{ev.registryBlockNumber}</span>}
-        </span>
-      </div>
-
-      {ev.diff.length > 0 && (
-        <div className="ev-diff">
-          <h4>What changed between anchored and submitted</h4>
-          <table>
-            <thead>
-              <tr><th>Field</th><th>Anchored on-chain</th><th>Submitted</th></tr>
-            </thead>
-            <tbody>
-              {ev.diff.map((d) => (
-                <tr key={d.path}>
-                  <td className="mono">{d.path}</td>
-                  <td>{formatVal(d.anchored)}</td>
-                  <td className="ev-changed">{formatVal(d.submitted)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="muted" style={{ marginTop: "0.6rem", fontSize: "0.88rem" }}>
-            Even a one-character change in any of these fields produces an entirely different SHA-256.
-            That&apos;s why the document hash above no longer matches the value on the blockchain.
-          </p>
-        </div>
-      )}
-
-      {!anyMismatch && (
-        <p className="muted" style={{ marginTop: "0.6rem", fontSize: "0.88rem" }}>
-          All three anchored values match the submission and the on-chain status is active — the
-          credential is mathematically the same one the issuer originally anchored.
-        </p>
-      )}
-    </div>
   );
 }
