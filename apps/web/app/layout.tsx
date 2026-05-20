@@ -1,34 +1,20 @@
 import "./style.css";
 import Link from "next/link";
-import { Cormorant_Garamond, EB_Garamond, IM_Fell_English_SC, IM_Fell_DW_Pica } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import RoleNav from "./components/RoleNav";
 import ChainStatusPill from "./components/ChainStatusPill";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
-const ebGaramond = EB_Garamond({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-body",
-  display: "swap",
-});
-const imFellSc = IM_Fell_English_SC({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-smallcaps",
-  display: "swap",
-});
-const imFellItalic = IM_Fell_DW_Pica({
-  subsets: ["latin"],
-  weight: ["400"],
-  style: ["normal", "italic"],
-  variable: "--font-script",
   display: "swap",
 });
 
@@ -38,7 +24,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const fontVars = `${cormorant.variable} ${ebGaramond.variable} ${imFellSc.variable} ${imFellItalic.variable}`;
+  const fontVars = `${cormorant.variable} ${inter.variable}`;
   return (
     <html lang="en" className={fontVars}>
       <body>

@@ -13,9 +13,9 @@
   --rule-soft: rgba(26, 18, 8, 0.25);
 
   --display: var(--font-display, "Cormorant Garamond"), Georgia, serif;
-  --body: var(--font-body, "EB Garamond"), Georgia, serif;
-  --smallcaps: var(--font-smallcaps, "IM Fell English SC"), Georgia, serif;
-  --script: var(--font-script, "IM Fell DW Pica"), Georgia, serif;
+  --body: var(--font-body, "Inter"), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --smallcaps: var(--font-body, "Inter"), system-ui, sans-serif;
+  --script: var(--font-display, "Cormorant Garamond"), Georgia, serif;
 }
 
 * { box-sizing: border-box; }
@@ -25,8 +25,8 @@ html, body {
   background: var(--vellum);
   color: var(--ink);
   font-family: var(--body);
-  font-size: 19px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -77,11 +77,11 @@ a:hover { text-decoration: underline; text-decoration-color: var(--gilt); }
   border-bottom: 1px solid var(--ink);
 }
 .masthead::after { content: ""; position: absolute; left: 2rem; right: 2rem; bottom: -5px; height: 1px; background: var(--ink); }
-.vol { font-family: var(--smallcaps); font-size: 13px; letter-spacing: 0.18em; color: var(--ink-soft); }
+.vol { font-family: var(--smallcaps); text-transform: uppercase; font-size: 13px; letter-spacing: 0.18em; color: var(--ink-soft); }
 .vol em { font-family: var(--script); font-style: italic; color: var(--burgundy); }
 
 .brand { text-align: center; font-family: var(--display); font-weight: 500; color: var(--ink); display: block; }
-.brand-line { font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.35em; color: var(--burgundy); }
+.brand-line { font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; letter-spacing: 0.35em; color: var(--burgundy); }
 .brand-name { font-size: 48px; line-height: 1; letter-spacing: 0.04em; margin: 6px 0 4px; }
 .brand-name .amp { font-style: italic; color: var(--burgundy); font-weight: 400; }
 .brand-sub { font-style: italic; font-size: 14px; color: var(--ink-soft); }
@@ -90,12 +90,12 @@ a:hover { text-decoration: underline; text-decoration-color: var(--gilt); }
 .ornament .rule { width: 60px; height: 1px; background: var(--ink); }
 .ornament .dot { width: 4px; height: 4px; background: var(--burgundy); transform: rotate(45deg); }
 
-.folio { text-align: right; font-family: var(--smallcaps); font-size: 13px; letter-spacing: 0.18em; color: var(--ink-soft); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.folio { text-align: right; font-family: var(--smallcaps); text-transform: uppercase; font-size: 13px; letter-spacing: 0.18em; color: var(--ink-soft); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 
 /* ---- Nav (RoleNav) ---- */
 .nav { display: flex; gap: 14px; }
 .nav a {
-  font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.22em; color: var(--ink);
+  font-family: var(--smallcaps); text-transform: uppercase; font-size: 12px; letter-spacing: 0.22em; color: var(--ink);
   padding: 4px 0; border-bottom: 1px solid transparent; transition: border-color 200ms ease, color 200ms ease;
 }
 .nav a:hover { border-bottom-color: var(--gilt); text-decoration: none; }
@@ -104,7 +104,7 @@ a:hover { text-decoration: underline; text-decoration-color: var(--gilt); }
 /* ---- Chain status pill ---- */
 .pill {
   display: inline-flex; align-items: center; gap: 0.5rem;
-  font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.2em; color: var(--ink-soft);
+  font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; letter-spacing: 0.2em; color: var(--ink-soft);
   padding: 4px 12px; border: 1px solid var(--rule); border-radius: 0; background: rgba(241, 231, 207, 0.6);
 }
 .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; display: inline-block; }
@@ -113,7 +113,7 @@ a:hover { text-decoration: underline; text-decoration-color: var(--gilt); }
 
 /* ---- Section intro / kickers ---- */
 .intro { padding: 2.6rem 0 1.4rem; max-width: 70ch; position: relative; }
-.intro .kicker { font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.3em; color: var(--burgundy); margin-bottom: 14px; }
+.intro .kicker { font-family: var(--smallcaps); text-transform: uppercase; font-size: 12px; letter-spacing: 0.3em; color: var(--burgundy); margin-bottom: 14px; }
 .intro h1 em { font-family: var(--display); font-style: italic; color: var(--burgundy); font-weight: 400; }
 .intro h1 .swash { font-style: italic; color: var(--gilt); }
 .intro p { color: var(--ink-soft); font-size: 1.05rem; }
@@ -122,11 +122,11 @@ a:hover { text-decoration: underline; text-decoration-color: var(--gilt); }
   font-weight: 500; padding: 8px 12px 0 0; color: var(--burgundy);
 }
 .intro .footnote {
-  margin-top: 1.4rem; font-family: var(--smallcaps); font-size: 12px;
+  margin-top: 1.4rem; font-family: var(--smallcaps); text-transform: uppercase; font-size: 12px;
   letter-spacing: 0.2em; color: var(--ink-soft); display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
 }
 .intro .footnote .sep { width: 8px; height: 8px; background: var(--burgundy); transform: rotate(45deg); }
-.section-roman { position: absolute; left: -2.2rem; top: 0.6rem; font-family: var(--smallcaps); color: var(--burgundy); font-size: 22px; letter-spacing: 0.1em; }
+.section-roman { position: absolute; left: -2.2rem; top: 0.6rem; font-family: var(--smallcaps); text-transform: uppercase; color: var(--burgundy); font-size: 22px; letter-spacing: 0.1em; }
 
 /* ---- Grids ---- */
 .grid { display: grid; gap: 1.4rem; }
@@ -161,10 +161,10 @@ a:hover { text-decoration: underline; text-decoration-color: var(--gilt); }
 }
 .metric::before { content: ""; position: absolute; inset: 6px; border: 1px solid var(--rule-soft); pointer-events: none; }
 .metric b { font-family: var(--display); font-style: italic; display: block; font-size: 2.6rem; line-height: 1; color: var(--ink); margin-bottom: 6px; }
-.metric span { font-family: var(--smallcaps); color: var(--burgundy); font-size: 10.5px; letter-spacing: 0.22em; }
+.metric span { font-family: var(--smallcaps); text-transform: uppercase; color: var(--burgundy); font-size: 10.5px; letter-spacing: 0.22em; }
 
 /* ---- Forms ---- */
-label { display: block; font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.22em; color: var(--burgundy); margin: 0.9rem 0 0.3rem; }
+label { display: block; font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; letter-spacing: 0.22em; color: var(--burgundy); margin: 0.9rem 0 0.3rem; }
 input, select, textarea {
   width: 100%; font: inherit; font-family: var(--body); padding: 0.7rem 0.8rem;
   border: 1px solid var(--rule); border-radius: 2px;
@@ -174,7 +174,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 textarea { min-height: 150px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; resize: vertical; line-height: 1.5; }
 
 button {
-  font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.2em;
+  font-family: var(--smallcaps); text-transform: uppercase; font-size: 12px; letter-spacing: 0.2em;
   cursor: pointer; padding: 0.7rem 1.2rem; border-radius: 2px;
   border: 1px solid var(--ink); background: var(--ink); color: var(--vellum);
   transition: transform 0.06s ease, opacity 0.15s ease;
@@ -210,7 +210,7 @@ pre {
 .badge {
   display: inline-flex; align-items: center; gap: 0.45rem;
   padding: 4px 12px; border: 1px solid currentColor;
-  font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.22em;
+  font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; letter-spacing: 0.22em;
 }
 .badge::before { content: ""; width: 7px; height: 7px; background: currentColor; transform: rotate(45deg); }
 .badge.valid { color: var(--moss); background: rgba(74, 93, 46, 0.10); }
@@ -246,7 +246,7 @@ pre {
 .diploma .d-corners .tr { top: 0; right: 0; border-left: none; border-bottom: none; }
 .diploma .d-corners .bl { bottom: 0; left: 0; border-right: none; border-top: none; }
 .diploma .d-corners .br { bottom: 0; right: 0; border-left: none; border-top: none; }
-.diploma .d-head { text-align: center; font-family: var(--smallcaps); font-size: 13px; letter-spacing: 0.4em; color: var(--burgundy); margin-bottom: 18px; }
+.diploma .d-head { text-align: center; font-family: var(--smallcaps); text-transform: uppercase; font-size: 13px; letter-spacing: 0.4em; color: var(--burgundy); margin-bottom: 18px; }
 .diploma .issuer { text-align: center; font-family: var(--display); font-style: italic; font-size: 22px; color: var(--ink-soft); margin-bottom: 10px; }
 .diploma .holder { text-align: center; font-family: var(--display); font-size: 48px; line-height: 1; letter-spacing: -0.01em; margin-bottom: 14px; color: var(--ink); }
 .diploma .holder .swash { font-style: italic; color: var(--burgundy); }
@@ -262,7 +262,7 @@ pre {
 }
 .diploma .meta {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
-  font-family: var(--smallcaps); font-size: 10px; letter-spacing: 0.18em; color: var(--ink-soft);
+  font-family: var(--smallcaps); text-transform: uppercase; font-size: 10px; letter-spacing: 0.18em; color: var(--ink-soft);
   text-align: center; margin-top: 1.2rem;
 }
 .diploma .meta div b { display: block; font-family: var(--body); font-weight: 600; font-size: 12.5px; letter-spacing: 0.05em; color: var(--ink); margin-top: 4px; }
@@ -283,7 +283,7 @@ pre {
 .score-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.4rem; }
 .score-head b { font-family: var(--display); font-size: 5rem; line-height: 1; font-weight: 500; color: var(--ink); }
 .score-head .of { font-family: var(--display); font-style: italic; font-size: 1.4rem; color: var(--ink-soft); }
-.score-grade { font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.3em; color: var(--moss); margin-bottom: 1.4rem; }
+.score-grade { font-family: var(--smallcaps); text-transform: uppercase; font-size: 12px; letter-spacing: 0.3em; color: var(--moss); margin-bottom: 1.4rem; }
 .score-grade.partial { color: var(--burgundy); }
 .verdict-narrative { font-family: var(--display); font-style: italic; font-size: 1.04rem; line-height: 1.55; color: var(--ink); border-left: 2px solid var(--gold); padding: 0.1rem 0 0.1rem 0.9rem; margin: 0.4rem 0 1.2rem; }
 
@@ -292,7 +292,7 @@ pre {
   align-items: center; gap: 14px; padding-bottom: 10px; margin-bottom: 10px;
   border-bottom: 1px solid var(--rule-soft);
 }
-.score-row .roman { font-family: var(--smallcaps); font-size: 11px; color: var(--burgundy); letter-spacing: 0.1em; }
+.score-row .roman { font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; color: var(--burgundy); letter-spacing: 0.1em; }
 .score-row .lbl { font-family: var(--body); font-size: 16px; color: var(--ink); }
 .score-row .lbl em { display: block; font-style: italic; font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
 .score-track { height: 5px; background: rgba(26, 18, 8, 0.12); position: relative; overflow: hidden; border-radius: 1px; display: block; }
@@ -309,12 +309,12 @@ pre {
 .timeline { list-style: none; margin: 0; padding: 0; }
 .timeline li { position: relative; padding: 0 0 1.1rem 1.5rem; border-left: 1px solid var(--rule); font-family: var(--body); }
 .timeline li::before { content: ""; position: absolute; left: -5px; top: 0.4rem; width: 9px; height: 9px; background: var(--burgundy); transform: rotate(45deg); }
-.timeline .when { font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.18em; color: var(--ink-soft); }
+.timeline .when { font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; letter-spacing: 0.18em; color: var(--ink-soft); }
 
 /* ---- Table ---- */
 table { width: 100%; border-collapse: collapse; font-size: 0.94rem; }
 th, td { text-align: left; padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--rule-soft); }
-th { font-family: var(--smallcaps); font-size: 10.5px; letter-spacing: 0.22em; color: var(--burgundy); }
+th { font-family: var(--smallcaps); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.22em; color: var(--burgundy); }
 
 /* ---- Home hero ---- */
 .hero {
@@ -322,7 +322,7 @@ th { font-family: var(--smallcaps); font-size: 10.5px; letter-spacing: 0.22em; c
   display: grid; grid-template-columns: 0.55fr 0.45fr; gap: 64px; align-items: center;
   position: relative;
 }
-.hero .roman-anchor { position: absolute; left: -2.2rem; top: 80px; font-family: var(--smallcaps); color: var(--burgundy); font-size: 28px; letter-spacing: 0.1em; }
+.hero .roman-anchor { position: absolute; left: -2.2rem; top: 80px; font-family: var(--smallcaps); text-transform: uppercase; color: var(--burgundy); font-size: 28px; letter-spacing: 0.1em; }
 .hero h1 { font-size: clamp(56px, 7vw, 104px); line-height: 0.96; margin-bottom: 24px; }
 .hero h1 em { font-family: var(--display); font-style: italic; color: var(--burgundy); font-weight: 400; }
 .hero h1 .swash { font-style: italic; color: var(--gilt); }
@@ -357,7 +357,7 @@ th { font-family: var(--smallcaps); font-size: 10.5px; letter-spacing: 0.22em; c
 .role-grid > a:last-child .role-card { border-right: none; }
 .role-card:hover { background: rgba(184, 137, 58, 0.08); }
 .role-card:hover .role-glyph { color: var(--burgundy); transform: scale(1.05); }
-.role-card .step { font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.3em; color: var(--burgundy); margin-bottom: 14px; }
+.role-card .step { font-family: var(--smallcaps); text-transform: uppercase; font-size: 12.5px; letter-spacing: 0.3em; color: var(--burgundy); margin-bottom: 14px; }
 .role-card .role-glyph {
   font-family: var(--display); font-style: italic; font-size: 70px; line-height: 1; color: var(--gilt);
   margin-bottom: 18px; transition: transform 400ms ease, color 400ms ease;
@@ -366,7 +366,7 @@ th { font-family: var(--smallcaps); font-size: 10.5px; letter-spacing: 0.22em; c
 .role-card h2 em { font-style: italic; color: var(--burgundy); font-weight: 400; }
 .role-card p { font-size: 17px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 18px; }
 .role-card .read {
-  font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.24em; color: var(--ink);
+  font-family: var(--smallcaps); text-transform: uppercase; font-size: 12px; letter-spacing: 0.24em; color: var(--ink);
   border-bottom: 1px solid var(--ink); padding-bottom: 2px; display: inline-block;
 }
 
