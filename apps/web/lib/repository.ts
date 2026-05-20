@@ -58,6 +58,24 @@ type PersistedStore = {
   shareLinks: ShareLink[];
 };
 
+export type CredentialMetrics = {
+  issued: number;
+  active: number;
+  revoked: number;
+  verificationChecks: number;
+};
+
+export type CredentialIndexes = {
+  byIssuer: Map<string, Set<string>>;
+  bySubject: Map<string, Set<string>>;
+  byStatus: { active: Set<string>; revoked: Set<string> };
+  byCreatedAt: string[];
+  searchTokens: Map<string, Set<string>>;
+  metrics: CredentialMetrics;
+  auditByType: Map<string, AuditEvent[]>;
+  auditByCredential: Map<string, AuditEvent[]>;
+};
+
 export type Repository = {
   readonly dbPath: string;
   users: Map<string, UserRecord>;
@@ -67,9 +85,68 @@ export type Repository = {
   auditEvents: AuditEvent[];
   registryRecords: Map<string, RegistryRecord>;
   shareLinks: Map<string, ShareLink>;
+  indexes: CredentialIndexes;
+  indexInsert(row: StoredCredential): void;
+  indexRevoke(id: string): void;
+  indexAudit(event: AuditEvent): void;
   persist(): void;
   reset(): void;
 };
+
+export function tokenizeCredential(row: StoredCredential): string[] {
+  const subject = row.credential?.credentialSubject;
+  const fields = [
+    subject?.name,
+    subject?.degree,
+    subject?.major,
+    row.id,
+    row.issuerDid,
+    row.subjectDid,
+  ];
+  const tokens = new Set<string>();
+  for (const field of fields) {
+    if (!field) continue;
+    for (const raw of String(field).toLowerCase().split(/[\s\-_/.,]+/)) {
+      if (raw.length >= 2) {
+        tokens.add(raw);
+        tokens.add(raw.slice(0, 2));
+        if (raw.length >= 3) tokens.add(raw.slice(0, 3));
+      }
+    }
+  }
+  return [...tokens];
+}
+
+export function tokenizeQuery(input: string): string[] {
+  const tokens = new Set<string>();
+  for (const raw of input.toLowerCase().split(/[\s\-_/.,]+/)) {
+    if (raw.length >= 2) tokens.add(raw);
+  }
+  return [...tokens];
+}
+
+function emptyIndexes(): CredentialIndexes {
+  return {
+    byIssuer: new Map(),
+    bySubject: new Map(),
+    byStatus: { active: new Set(), revoked: new Set() },
+    byCreatedAt: [],
+    searchTokens: new Map(),
+    metrics: { issued: 0, active: 0, revoked: 0, verificationChecks: 0 },
+    auditByType: new Map(),
+    auditByCredential: new Map(),
+  };
+}
+
+function addToSetMap(map: Map<string, Set<string>>, key: string, value: string) {
+  let set = map.get(key);
+  if (!set) {
+    set = new Set();
+    map.set(key, set);
+  }
+  set.add(value);
+}
+
 
 function emptyPersisted(): PersistedStore {
   return { users: [], institutions: [], students: [], credentials: [], auditEvents: [], registryRecords: [], shareLinks: [] };
@@ -95,6 +172,40 @@ export function createRepository(dbPath: string): Repository {
     auditEvents: data.auditEvents,
     registryRecords: new Map(data.registryRecords.map((row) => [row.credentialHash, row])),
     shareLinks: new Map(data.shareLinks.map((row) => [row.id, row])),
+    indexes: emptyIndexes(),
+    indexInsert(row) {
+      addToSetMap(repo.indexes.byIssuer, row.issuerDid, row.id);
+      addToSetMap(repo.indexes.bySubject, row.subjectDid, row.id);
+      if (row.revoked) repo.indexes.byStatus.revoked.add(row.id);
+      else repo.indexes.byStatus.active.add(row.id);
+      if (!repo.indexes.byCreatedAt.includes(row.id)) repo.indexes.byCreatedAt.unshift(row.id);
+      for (const token of tokenizeCredential(row)) addToSetMap(repo.indexes.searchTokens, token, row.id);
+      repo.indexes.metrics.issued += 1;
+      if (row.revoked) repo.indexes.metrics.revoked += 1;
+      else repo.indexes.metrics.active += 1;
+    },
+    indexRevoke(id) {
+      if (repo.indexes.byStatus.active.delete(id)) {
+        repo.indexes.byStatus.revoked.add(id);
+        repo.indexes.metrics.active -= 1;
+        repo.indexes.metrics.revoked += 1;
+      }
+    },
+    indexAudit(event) {
+      let typeBucket = repo.indexes.auditByType.get(event.type);
+      if (!typeBucket) {
+        typeBucket = [];
+        repo.indexes.auditByType.set(event.type, typeBucket);
+      }
+      typeBucket.push(event);
+      let credBucket = repo.indexes.auditByCredential.get(event.credentialId);
+      if (!credBucket) {
+        credBucket = [];
+        repo.indexes.auditByCredential.set(event.credentialId, credBucket);
+      }
+      credBucket.push(event);
+      if (event.type === "verified") repo.indexes.metrics.verificationChecks += 1;
+    },
     persist() {
       mkdirSync(dirname(dbPath), { recursive: true });
       const snapshot: PersistedStore = {
@@ -116,6 +227,7 @@ export function createRepository(dbPath: string): Repository {
       repo.auditEvents.splice(0);
       repo.registryRecords.clear();
       repo.shareLinks.clear();
+      repo.indexes = emptyIndexes();
       repo.users.set("verifier", {
         id: "verifier",
         name: "Public Verifier",
@@ -124,6 +236,14 @@ export function createRepository(dbPath: string): Repository {
       });
     },
   };
+
+  for (const row of [...repo.credentials.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+    repo.indexInsert(row);
+  }
+  for (const event of repo.auditEvents) {
+    repo.indexAudit(event);
+  }
+
   return repo;
 }
 
