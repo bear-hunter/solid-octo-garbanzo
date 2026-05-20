@@ -55,9 +55,13 @@ export default function HolderPage() {
 
   return (
     <>
-      <section className="intro">
-        <h1>Credential Wallet</h1>
-        <p>Your credentials live here as portable, self-sovereign diplomas. Share a verifier link — no university lookup required.</p>
+      <section className="intro rise d1">
+        <div className="kicker">— Estate the Second · The Library —</div>
+        <h1>The <em>Holder&apos;s</em> Wallet.</h1>
+        <p>
+          Your credentials live here as portable, self-sovereign diplomas. Copy the JWT, the CID,
+          or mint a verifier link — no university lookup required, no registrar needed on the line.
+        </p>
       </section>
 
       {message && <div className="notice">{message}</div>}
@@ -73,7 +77,7 @@ export default function HolderPage() {
           <p className="muted">No credentials yet. Issue one from the Issuer dashboard or load presentation records.</p>
         </div>
       ) : (
-        <section className="grid cols-2" style={{ marginTop: "1.1rem", alignItems: "start" }}>
+        <section className="grid cols-2 rise d2" style={{ marginTop: "1.4rem", alignItems: "start" }}>
           <div className="stack">
             <div className="card">
               <label>Select credential</label>
@@ -97,27 +101,27 @@ export default function HolderPage() {
 
           {row && (
             <div className="card stack">
-              <h2>Portable Proof</h2>
+              <h2>Portable <em>Proof</em></h2>
               <div>
-                <label>IPFS CID ({row.storageMode ?? "local"})</label>
+                <label>IPFS Address &middot; {row.storageMode ?? "local"}</label>
                 <p className="mono">{row.cid}</p>
               </div>
               <div>
-                <label>Credential hash</label>
+                <label>Anchored Hash</label>
                 <p className="mono">{row.hash}</p>
               </div>
               <div>
-                <label>Signed credential (JWT)</label>
+                <label>Sealed Credential &middot; JWT</label>
                 <p className="mono">{row.jwt.slice(0, 96)}…</p>
               </div>
               <div className="btn-row">
                 <CopyButton value={row.jwt} label="Copy JWT" />
                 <CopyButton value={row.cid} label="Copy CID" />
-                <button onClick={makeShare}>Create Verifier Link</button>
+                <button className="gold" onClick={makeShare}>Mint Verifier Link</button>
               </div>
               {shareUrl && (
                 <div>
-                  <label>Shareable verification link</label>
+                  <label>Verifier Link</label>
                   <p className="mono">{shareUrl}</p>
                 </div>
               )}
