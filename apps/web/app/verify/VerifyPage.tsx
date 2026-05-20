@@ -13,7 +13,11 @@ type VerifyResult = {
   credential?: { credentialSubject: { name: string; degree: string; major: string } };
 };
 type AuditEvent = { id: string; type: string; note: string; createdAt: string };
-type CredentialRow = { id: string; credential: { credentialSubject: { name: string } } };
+type CredentialRow = {
+  id: string;
+  revoked?: boolean;
+  credential: { credentialSubject: { name: string; degree: string; studentId: string } };
+};
 
 async function api(path: string, body?: unknown) {
   const res = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined);
@@ -22,8 +26,15 @@ async function api(path: string, body?: unknown) {
   return json;
 }
 
+function describeRow(row: CredentialRow) {
+  const s = row.credential.credentialSubject;
+  const status = row.revoked ? "revoked" : "active";
+  return `${s.name} — ${s.degree} (${s.studentId}) · ${status}`;
+}
+
 export default function VerifyPage({ shareId }: { shareId?: string }) {
   const [rows, setRows] = useState<CredentialRow[]>([]);
+  const [selectedId, setSelectedId] = useState("");
   const [payload, setPayload] = useState(shareId ? JSON.stringify({ shareId }, null, 2) : "");
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -33,7 +44,10 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
   async function refresh() {
     const data: CredentialRow[] = await api("/api/credentials");
     setRows(data);
-    if (!payload && !shareId && data[0]) setPayload(JSON.stringify({ id: data[0].id }, null, 2));
+    if (!selectedId && !shareId && data[0]) {
+      setSelectedId(data[0].id);
+      if (!payload) setPayload(JSON.stringify({ id: data[0].id }, null, 2));
+    }
   }
 
   useEffect(() => {
@@ -41,6 +55,11 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
     if (shareId) verify({ shareId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareId]);
+
+  function chooseCredential(id: string) {
+    setSelectedId(id);
+    setPayload(id ? JSON.stringify({ id }, null, 2) : "");
+  }
 
   async function verify(body: unknown) {
     setBusy(true);
@@ -58,12 +77,16 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
   }
 
   async function verifyTampered() {
-    const first = rows[0];
-    if (!first) return;
+    const targetId = selectedId || rows[0]?.id;
+    if (!targetId) return;
     const full = await api("/api/credentials");
-    const target = full.find((r: { id: string }) => r.id === first.id);
-    const tampered = { ...target.credential, credentialSubject: { ...target.credential.credentialSubject, degree: "Doctor of Philosophy" } };
-    await verify({ id: first.id, credential: tampered });
+    const target = full.find((r: { id: string }) => r.id === targetId);
+    if (!target) return;
+    const tampered = {
+      ...target.credential,
+      credentialSubject: { ...target.credential.credentialSubject, degree: "Doctor of Philosophy" },
+    };
+    await verify({ id: targetId, credential: tampered });
     setMessage("Submitted an altered copy — the verifier should flag it as tampered.");
   }
 
@@ -84,7 +107,20 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
       <section className="grid cols-2 rise d2" style={{ alignItems: "start" }}>
         <div className="card stack">
           <h2>Submission to the <em>Tribunal</em></h2>
-          <p className="muted">Accepts a JSON object of one key: <code>id</code>, <code>cid</code>, <code>jwt</code>, or <code>shareId</code>.</p>
+          <label>Choose a credential on record</label>
+          <select
+            value={selectedId}
+            onChange={(e) => chooseCredential(e.target.value)}
+            disabled={rows.length === 0}
+          >
+            {rows.length === 0 && <option value="">No credentials on file — load records below</option>}
+            {rows.map((row) => (
+              <option key={row.id} value={row.id}>
+                {describeRow(row)}
+              </option>
+            ))}
+          </select>
+          <p className="muted">Or paste a JSON object with one key — <code>id</code>, <code>cid</code>, <code>jwt</code>, or <code>shareId</code>.</p>
           <textarea value={payload} onChange={(e) => setPayload(e.target.value)} placeholder='{"id":"urn:uuid:…"}' />
           <div className="btn-row">
             <button disabled={busy} onClick={() => { try { verify(JSON.parse(payload || "{}")); } catch { setMessage("Input is not valid JSON."); } }}>
@@ -93,8 +129,16 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
             <button className="ghost" disabled={busy || rows.length === 0} onClick={verifyTampered}>
               Demo: Verify Tampered Copy
             </button>
-            <button className="ghost" onClick={() => api("/api/demo/reset", {}).then(refresh).then(() => setMessage("Presentation records loaded."))}>
-              Load Records
+            <button
+              className="ghost"
+              disabled={busy}
+              onClick={async () => {
+                await api("/api/demo/reset", {});
+                await refresh();
+                setMessage("Presentation records loaded — pick one from the dropdown above.");
+              }}
+            >
+              Load Sample Records
             </button>
           </div>
         </div>
