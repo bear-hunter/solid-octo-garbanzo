@@ -181,30 +181,6 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
     setMessage(`Submitted an altered copy (changed: ${list}). The on-chain hash should refuse it.`);
   }
 
-  async function forgeIssuer() {
-    if (!selectedRow) return;
-    const fakeIssuer = `did:example:forged-${Math.random().toString(16).slice(2, 14)}`;
-    const forged: AcademicCredential = { ...selectedRow.credential, issuer: fakeIssuer };
-    await verify({ id: selectedRow.id, credential: forged });
-    setMessage(`Submitted with a forged issuer DID (${fakeIssuer}) — issuer-authorisation check should reject it.`);
-  }
-
-  async function forgeStorageAddress() {
-    if (!selectedRow) return;
-    const fakeCid = `bafy-forged-${Math.random().toString(16).slice(2, 14)}`;
-    await verify({ id: selectedRow.id, cid: fakeCid });
-    setMessage(`Submitted with a forged IPFS address (${fakeCid}) — storage-address check should fail.`);
-  }
-
-  async function submitMalformed() {
-    if (!selectedRow) return;
-    const subject = { ...selectedRow.credential.credentialSubject } as Record<string, unknown>;
-    delete subject.degree;
-    const malformed = { ...selectedRow.credential, credentialSubject: subject } as unknown as AcademicCredential;
-    await verify({ id: selectedRow.id, credential: malformed });
-    setMessage("Submitted a malformed credential (degree field stripped) — schema validation should reject it.");
-  }
-
   function setField(key: keyof EditableSubject, value: string) {
     setEdits((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
@@ -292,21 +268,6 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
                 >
                   Load Sample Records
                 </button>
-              </div>
-
-              <div className="scenario-row">
-                <div className="scenario-label">Or simulate other forgeries —</div>
-                <div className="btn-row">
-                  <button className="ghost" disabled={busy} onClick={forgeIssuer} title="Replace the issuer DID with one that isn't registered on-chain">
-                    Forge issuer DID → unknown issuer
-                  </button>
-                  <button className="ghost" disabled={busy} onClick={forgeStorageAddress} title="Submit with an IPFS address the issuer never anchored">
-                    Forge IPFS address → storage mismatch
-                  </button>
-                  <button className="ghost" disabled={busy} onClick={submitMalformed} title="Strip a required field so the schema can't parse it">
-                    Strip a required field → invalid
-                  </button>
-                </div>
               </div>
             </>
           )}
