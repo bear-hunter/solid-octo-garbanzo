@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/issuer", label: "Issuer" },
   { href: "/holder", label: "Holder" },
   { href: "/verify", label: "Verifier" },
+  { href: "/ledger", label: "Ledger" },
 ];
 
 export default function RoleNav() {

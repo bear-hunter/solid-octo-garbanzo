@@ -386,6 +386,17 @@ th { font-family: var(--smallcaps); text-transform: uppercase; font-size: 10.5px
 .rise.d4 { animation-delay: 480ms; }
 .rise.d5 { animation-delay: 640ms; }
 
+/* ---- Ledger ---- */
+.ledger-table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; font-size: 0.9rem; }
+.ledger-table th { text-align: left; padding: 0.55rem 0.6rem 0.4rem; border-bottom: 1px solid var(--rule); font-family: var(--smallcaps); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.22em; color: var(--ink-soft); }
+.ledger-table td { padding: 0.55rem 0.6rem; border-bottom: 1px dashed var(--rule); vertical-align: top; }
+.ledger-table tr:last-child td { border-bottom: none; }
+.tx-kind { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; }
+.tx-kind.issued { background: rgba(74, 93, 46, 0.14); color: var(--moss); }
+.tx-kind.revoked { background: rgba(107, 20, 16, 0.12); color: var(--burgundy); }
+.tx-reason { font-size: 0.78rem; margin-top: 2px; }
+.bad { color: var(--burgundy); }
+
 /* ---- Responsive ---- */
 @media (max-width: 1024px) {
   .hero { grid-template-columns: 1fr; gap: 36px; }
