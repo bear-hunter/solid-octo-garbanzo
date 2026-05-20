@@ -25,16 +25,16 @@ export default function ChainStatusPill() {
     };
   }, []);
 
-  if (!status) return <span className="pill">chain: …</span>;
+  if (!status) return <span className="pill">chain · awaiting first block</span>;
   const chainUp = status.registry.ok;
   const block = status.registry.blockNumber;
   return (
     <span className="pill" title={`Registry: ${status.registry.mode} · Storage: ${status.storage.mode}`}>
       <span className={`dot ${chainUp ? "up" : "down"}`} />
-      {status.registry.mode}
-      {block !== undefined ? ` #${block}` : ""}
+      chain · {status.registry.mode}
+      {block !== undefined ? ` · #${block}` : ""}
       <span className={`dot ${status.storage.ok ? "up" : "down"}`} />
-      ipfs:{status.storage.mode}
+      ipfs · {status.storage.mode}
     </span>
   );
 }
