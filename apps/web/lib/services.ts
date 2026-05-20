@@ -241,7 +241,32 @@ export function createCredentialService(deps: ServiceDeps) {
   }
 
   async function seedPresentationRecords() {
-    repo.reset();
+    // Idempotent and additive: keep any credentials the user already issued.
+    // If Ada Lovelace's presentation credential is already present and active,
+    // return it; otherwise add it fresh without resetting other data.
+    const existing = [...repo.credentials.values()].find(
+      (c) =>
+        c.credential.credentialSubject.name === "Ada Lovelace" &&
+        c.credential.credentialSubject.studentId === "NSU-2026-001" &&
+        !c.revoked,
+    );
+    if (existing) {
+      const institution = repo.institutions.get(existing.issuerDid);
+      const student = repo.students.get(existing.subjectDid);
+      const share =
+        [...repo.shareLinks.values()].find((link) => link.credentialId === existing.id) ??
+        createShareLink(existing.id);
+      return {
+        institution: institution
+          ? { did: institution.did, name: institution.name, publicKeyJwk: institution.publicKeyJwk }
+          : undefined,
+        student: student
+          ? { did: student.did, name: student.name, publicKeyJwk: student.publicKeyJwk }
+          : undefined,
+        credential: existing,
+        share,
+      };
+    }
     const institution = await makeInstitution("Northbridge State University");
     const student = await makeStudent("Ada Lovelace");
     const credential = await issue({
