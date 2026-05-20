@@ -151,29 +151,49 @@ export function createCredentialService(deps: ServiceDeps) {
     return row;
   }
 
-  async function verify(input: VerifyInput): Promise<VerificationResult> {
+  async function verify(input: VerifyInput): Promise<VerificationResult & { evidence?: VerificationEvidence }> {
     const shared = input.shareId ? repo.shareLinks.get(input.shareId) : undefined;
     const id = input.id ?? shared?.credentialId;
     const row = id
       ? repo.credentials.get(id)
       : [...repo.credentials.values()].find((item) => item.cid === input.cid || item.jwt === input.jwt);
     if (!row) {
-      return { status: "unavailable", valid: false, score: 0, breakdown: emptyBreakdown(), reasons: ["Credential was not found"] };
+      return { status: "unavailable", valid: false, score: 0, breakdown: emptyBreakdown(), reasons: ["Credential was not found"], evidence: undefined };
     }
 
     const issuer = repo.institutions.get(row.issuerDid);
     const onChain = await registry.getCredential(row.hash);
     const offChain = input.credential ?? (await storage.get(row.cid)) ?? row.credential;
+    const submittedCid = input.cid ?? row.cid;
+    const anchoredCid = onChain?.cid ?? row.cid;
+    const anchoredHash = onChain?.credentialHash ?? row.hash;
+    const submittedHash = offChain ? hashHex(offChain) : "";
+    const registeredIssuerDid = row.issuerDid;
+    const submittedIssuerDid = offChain?.issuer ?? "";
 
     const result = await verifyCredential({
       jwt: input.credential ? undefined : input.jwt ?? row.jwt,
       credential: offChain,
       issuer: issuer ? { did: issuer.did, name: issuer.name, active: issuer.active, publicKeyJwk: issuer.publicKeyJwk } : undefined,
-      cid: input.cid ?? row.cid,
-      expectedCid: onChain?.cid ?? row.cid,
-      storedHash: onChain?.credentialHash ?? row.hash,
+      cid: submittedCid,
+      expectedCid: anchoredCid,
+      storedHash: anchoredHash,
       revoked: row.revoked || onChain?.revoked === true,
       unavailable: !offChain,
+    });
+
+    const evidence = buildEvidence({
+      submittedHash,
+      anchoredHash,
+      submittedCid,
+      anchoredCid,
+      submittedIssuerDid,
+      registeredIssuerDid,
+      registeredIssuerName: issuer?.name,
+      submittedCredential: offChain,
+      anchoredCredential: row.credential,
+      revokedOnChain: onChain?.revoked === true || row.revoked === true,
+      registryBlockNumber: row.chain?.blockNumber,
     });
 
     audit(repo, row.id, "verified", "verifier", `Verification completed with status ${result.status}.`, {
@@ -182,7 +202,7 @@ export function createCredentialService(deps: ServiceDeps) {
       onChain: Boolean(onChain),
     });
     repo.persist();
-    return result;
+    return { ...result, evidence };
   }
 
   function createShareLink(credentialId: string) {
@@ -313,6 +333,86 @@ export function createCredentialService(deps: ServiceDeps) {
 
 function emptyBreakdown() {
   return { schema: 0, issuer: 0, signature: 0, contentIntegrity: 0, onChain: 0, revocation: 0 };
+}
+
+export type FieldDiff = { path: string; anchored: unknown; submitted: unknown };
+
+export type VerificationEvidence = {
+  submittedHash: string;
+  anchoredHash: string;
+  hashesMatch: boolean;
+  submittedCid: string;
+  anchoredCid: string;
+  cidsMatch: boolean;
+  submittedIssuerDid: string;
+  registeredIssuerDid: string;
+  registeredIssuerName?: string;
+  issuerMatches: boolean;
+  revokedOnChain: boolean;
+  registryBlockNumber?: number;
+  diff: FieldDiff[];
+};
+
+function buildEvidence(input: {
+  submittedHash: string;
+  anchoredHash: string;
+  submittedCid: string;
+  anchoredCid: string;
+  submittedIssuerDid: string;
+  registeredIssuerDid: string;
+  registeredIssuerName?: string;
+  submittedCredential?: AcademicCredential;
+  anchoredCredential: AcademicCredential;
+  revokedOnChain: boolean;
+  registryBlockNumber?: number;
+}): VerificationEvidence {
+  return {
+    submittedHash: input.submittedHash,
+    anchoredHash: input.anchoredHash,
+    hashesMatch: !!input.submittedHash && input.submittedHash === input.anchoredHash,
+    submittedCid: input.submittedCid,
+    anchoredCid: input.anchoredCid,
+    cidsMatch: input.submittedCid === input.anchoredCid,
+    submittedIssuerDid: input.submittedIssuerDid,
+    registeredIssuerDid: input.registeredIssuerDid,
+    registeredIssuerName: input.registeredIssuerName,
+    issuerMatches: input.submittedIssuerDid === input.registeredIssuerDid,
+    revokedOnChain: input.revokedOnChain,
+    registryBlockNumber: input.registryBlockNumber,
+    diff: input.submittedCredential ? diffCredential(input.anchoredCredential, input.submittedCredential) : [],
+  };
+}
+
+function diffCredential(anchored: AcademicCredential, submitted: AcademicCredential): FieldDiff[] {
+  const diffs: FieldDiff[] = [];
+  const topFields: Array<keyof AcademicCredential> = ["issuer", "issuanceDate", "id"];
+  for (const f of topFields) {
+    if (anchored[f] !== submitted[f]) {
+      diffs.push({ path: f, anchored: anchored[f], submitted: submitted[f] });
+    }
+  }
+  const subjectFields: Array<keyof AcademicCredential["credentialSubject"]> = [
+    "id",
+    "studentId",
+    "name",
+    "degree",
+    "major",
+    "graduationDate",
+    "gpa",
+  ];
+  const a = anchored.credentialSubject as Record<string, unknown>;
+  const s = (submitted.credentialSubject ?? {}) as Record<string, unknown>;
+  for (const f of subjectFields) {
+    if (a[f] !== s[f]) {
+      diffs.push({ path: `credentialSubject.${f}`, anchored: a[f], submitted: s[f] });
+    }
+  }
+  const aKeys = Object.keys(a);
+  const sKeys = Object.keys(s);
+  for (const k of aKeys) if (!(k in s)) diffs.push({ path: `credentialSubject.${k}`, anchored: a[k], submitted: undefined });
+  for (const k of sKeys) if (!(k in a)) diffs.push({ path: `credentialSubject.${k}`, anchored: undefined, submitted: s[k] });
+  const seen = new Set<string>();
+  return diffs.filter((d) => (seen.has(d.path) ? false : seen.add(d.path)));
 }
 
 export type CredentialService = ReturnType<typeof createCredentialService>;
