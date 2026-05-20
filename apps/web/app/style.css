@@ -285,6 +285,7 @@ pre {
 .score-head .of { font-family: var(--display); font-style: italic; font-size: 1.4rem; color: var(--ink-soft); }
 .score-grade { font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.3em; color: var(--moss); margin-bottom: 1.4rem; }
 .score-grade.partial { color: var(--burgundy); }
+.verdict-narrative { font-family: var(--display); font-style: italic; font-size: 1.04rem; line-height: 1.55; color: var(--ink); border-left: 2px solid var(--gold); padding: 0.1rem 0 0.1rem 0.9rem; margin: 0.4rem 0 1.2rem; }
 
 .score-row {
   display: grid; grid-template-columns: 28px 1fr 100px 50px;

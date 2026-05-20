@@ -32,6 +32,25 @@ function describeRow(row: CredentialRow) {
   return `${s.name} — ${s.degree} (${s.studentId}) · ${status}`;
 }
 
+function verdictNarrative(status: string): string {
+  switch (status) {
+    case "valid":
+      return "Authentic. The credential was signed by an authorised institution, has not been altered since issuance, and is not revoked — verified directly against the blockchain, without contacting the issuer.";
+    case "tampered":
+      return "This document does not match the version the issuer anchored on the blockchain. Someone altered it after issuance.";
+    case "revoked":
+      return "The signature and contents are intact, but the issuer has recorded this credential as revoked on the blockchain.";
+    case "unknownIssuer":
+      return "The signing party is not a registered institution on the blockchain, so their authority to issue this credential cannot be confirmed.";
+    case "unavailable":
+      return "The credential document could not be retrieved from IPFS, so its contents cannot be checked against the on-chain anchor.";
+    case "invalid":
+      return "The submission failed basic validation — the signature, schema, or structure does not parse as a verifiable credential.";
+    default:
+      return "Verification produced an unrecognised status.";
+  }
+}
+
 export default function VerifyPage({ shareId }: { shareId?: string }) {
   const [rows, setRows] = useState<CredentialRow[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -152,6 +171,7 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
               <div>
                 <StatusBadge status={result.status} />
               </div>
+              <p className="verdict-narrative">{verdictNarrative(result.status)}</p>
               <ScoreBar score={result.score} breakdown={result.breakdown} />
               <div>
                 <h3>Of the predicates that disagreed</h3>
