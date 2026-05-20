@@ -293,6 +293,8 @@ pre {
 .raw-json { border-top: 1px dashed var(--rule); padding-top: 0.8rem; }
 .raw-json summary { cursor: pointer; font-family: var(--smallcaps); text-transform: uppercase; font-size: 11px; letter-spacing: 0.22em; color: var(--ink-soft); }
 .raw-json[open] summary { color: var(--burgundy); }
+.scenario-row { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+.scenario-label { font-family: var(--smallcaps); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.22em; color: var(--ink-soft); margin-bottom: 0.3rem; }
 
 .score-row {
   display: grid; grid-template-columns: 28px 1fr 100px 50px;
