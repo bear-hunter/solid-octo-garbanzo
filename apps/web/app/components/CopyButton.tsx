@@ -19,7 +19,7 @@ export default function CopyButton({ value, label }: { value: string; label: str
         }
       }}
     >
-      {copied ? "Copied" : failed ? "Copy failed" : label}
+      {copied ? "Copied to vault" : failed ? "Copy failed" : label}
     </button>
   );
 }

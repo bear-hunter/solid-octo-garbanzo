@@ -63,9 +63,14 @@ export default function IssuerPage() {
 
   return (
     <>
-      <section className="intro">
-        <h1>Institution Dashboard</h1>
-        <p>Register issuer and student DIDs, then issue credentials that are signed, stored on IPFS, and anchored on-chain.</p>
+      <section className="intro rise d1">
+        <div className="kicker">— Estate the First · The Chancery —</div>
+        <h1>The <em>Institution&apos;s</em> Dashboard.</h1>
+        <p>
+          Register an issuer DID, mint a seal, then sign and anchor each academic credential
+          upon the chain. Every issuance is sealed, dated, and indelibly published — the registrar&apos;s
+          office, for purposes of authentication, becomes optional.
+        </p>
       </section>
 
       {message && <div className="notice">{message}</div>}
@@ -76,16 +81,16 @@ export default function IssuerPage() {
         </button>
       </div>
 
-      <section className="grid cols-4" style={{ marginTop: "1.1rem" }}>
-        <div className="metric"><b>{metrics.issued}</b><span>Issued</span></div>
-        <div className="metric"><b>{metrics.active}</b><span>Active</span></div>
+      <section className="grid cols-4 rise d2" style={{ marginTop: "1.4rem" }}>
+        <div className="metric"><b>{metrics.issued}</b><span>Anchors written</span></div>
+        <div className="metric"><b>{metrics.active}</b><span>In good standing</span></div>
         <div className="metric"><b>{metrics.revoked}</b><span>Revoked</span></div>
-        <div className="metric"><b>{metrics.verificationChecks}</b><span>Verifier checks</span></div>
+        <div className="metric"><b>{metrics.verificationChecks}</b><span>Tribunals served</span></div>
       </section>
 
-      <section className="grid cols-2" style={{ marginTop: "1.1rem" }}>
+      <section className="grid cols-2 rise d3" style={{ marginTop: "1.4rem" }}>
         <div className="card">
-          <h2>Issuer Identity</h2>
+          <h2>Issuer <em>Identity</em></h2>
           <label>Institution name</label>
           <input value={issuerName} onChange={(e) => setIssuerName(e.target.value)} />
           <div className="btn-row">
@@ -101,7 +106,7 @@ export default function IssuerPage() {
         </div>
 
         <div className="card">
-          <h2>Student Holder</h2>
+          <h2>Student <em>Holder</em></h2>
           <label>Student name</label>
           <input value={studentName} onChange={(e) => setStudentName(e.target.value)} />
           <div className="btn-row">
@@ -117,8 +122,8 @@ export default function IssuerPage() {
         </div>
       </section>
 
-      <section className="card" style={{ marginTop: "1.1rem" }}>
-        <h2>Issue Credential</h2>
+      <section className="card rise d4" style={{ marginTop: "1.4rem" }}>
+        <h2>Issue a <em>Credential</em></h2>
         <div className="grid cols-3">
           <div><label>Student ID</label><input value={form.studentId} onChange={(e) => setForm({ ...form, studentId: e.target.value })} /></div>
           <div><label>Degree</label><input value={form.degree} onChange={(e) => setForm({ ...form, degree: e.target.value })} /></div>
@@ -148,8 +153,8 @@ export default function IssuerPage() {
         </div>
       </section>
 
-      <section className="card" style={{ marginTop: "1.1rem" }}>
-        <h2>Issued Credentials</h2>
+      <section className="card rise d5" style={{ marginTop: "1.4rem" }}>
+        <h2>Register of <em>Issuances</em></h2>
         {rows.length === 0 ? (
           <p className="muted">No credentials issued yet.</p>
         ) : (
@@ -182,8 +187,8 @@ export default function IssuerPage() {
         )}
       </section>
 
-      <section className="card" style={{ marginTop: "1.1rem" }}>
-        <h2>Audit Trail</h2>
+      <section className="card rise d5" style={{ marginTop: "1.4rem" }}>
+        <h2>Audit <em>Trail</em></h2>
         {events.length === 0 ? (
           <p className="muted">No activity yet.</p>
         ) : (

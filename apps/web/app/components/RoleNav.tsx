@@ -12,7 +12,7 @@ const LINKS = [
 export default function RoleNav() {
   const pathname = usePathname();
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="Roles">
       {LINKS.map((link) => (
         <Link key={link.href} href={link.href} className={pathname.startsWith(link.href) ? "active" : ""}>
           {link.label}

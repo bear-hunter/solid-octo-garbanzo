@@ -69,17 +69,22 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
 
   return (
     <>
-      <section className="intro">
-        <h1>Verifier Portal</h1>
-        <p>Paste a credential reference or open a holder share link. CredVerify checks the signature, the issuer&apos;s authorization, the content hash, and the on-chain anchor.</p>
+      <section className="intro rise d1">
+        <div className="kicker">— Estate the Third · The Tribunal —</div>
+        <h1>The <em>Verifier&apos;s</em> Tribunal.</h1>
+        <p>
+          Submit a credential — by JWT, CID, ID, or share-link — and the tribunal renders an
+          explainable six-part trust score, with the failing predicate named in plain language and
+          pinpointed to the contract call that disagreed.
+        </p>
       </section>
 
       {message && <div className="notice">{message}</div>}
 
-      <section className="grid cols-2" style={{ alignItems: "start" }}>
+      <section className="grid cols-2 rise d2" style={{ alignItems: "start" }}>
         <div className="card stack">
-          <h2>Credential Input</h2>
-          <p className="muted">Accepts {"{ \"id\": … }"}, {"{ \"cid\": … }"}, {"{ \"jwt\": … }"}, or {"{ \"shareId\": … }"}.</p>
+          <h2>Submission to the <em>Tribunal</em></h2>
+          <p className="muted">Accepts a JSON object of one key: <code>id</code>, <code>cid</code>, <code>jwt</code>, or <code>shareId</code>.</p>
           <textarea value={payload} onChange={(e) => setPayload(e.target.value)} placeholder='{"id":"urn:uuid:…"}' />
           <div className="btn-row">
             <button disabled={busy} onClick={() => { try { verify(JSON.parse(payload || "{}")); } catch { setMessage("Input is not valid JSON."); } }}>
@@ -95,7 +100,7 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
         </div>
 
         <div className="card stack">
-          <h2>Trust Result</h2>
+          <h2>Verdict of the <em>Tribunal</em></h2>
           {!result ? (
             <p className="muted">No verification run yet.</p>
           ) : (
@@ -105,13 +110,13 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
               </div>
               <ScoreBar score={result.score} breakdown={result.breakdown} />
               <div>
-                <h3>Explainable checklist</h3>
+                <h3>Of the predicates that disagreed</h3>
                 {result.reasons.length === 0 ? (
-                  <p className="muted">All six checks passed.</p>
+                  <p className="muted">— Six predicates, six lights of inspection · all confirmed —</p>
                 ) : (
-                  <ul>
+                  <ul className="timeline">
                     {result.reasons.map((reason) => (
-                      <li key={reason}>{reason}</li>
+                      <li key={reason}><div className="when">PREDICATE · FAILED</div>{reason}</li>
                     ))}
                   </ul>
                 )}
@@ -128,8 +133,8 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
       </section>
 
       {events.length > 0 && (
-        <section className="card" style={{ marginTop: "1.1rem" }}>
-          <h2>Audit Timeline</h2>
+        <section className="card rise d3" style={{ marginTop: "1.4rem" }}>
+          <h2>Audit <em>Timeline</em></h2>
           <ul className="timeline">
             {events.map((event) => (
               <li key={event.id}>
