@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
-import ScoreBar from "../components/ScoreBar";
+import VerificationChecklist from "../components/VerificationChecklist";
 
 type CredentialSubject = {
   id: string;
@@ -35,6 +35,7 @@ type VerifyResult = {
   score: number;
   reasons: string[];
   breakdown?: Record<string, number>;
+  checks?: Array<{ key: "signature" | "issuer" | "onChain" | "revocation" | "contentIntegrity" | "schema"; status: "verified" | "warning" | "failed" | "unavailable" | "not_applicable"; message: string }>;
   credential?: { credentialSubject: { name: string; degree: string; major: string } };
 };
 
@@ -150,6 +151,7 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
       const id = (body as { id?: string }).id;
       if (id) setEvents((await api(`/api/credentials/${id}/audit`)).events);
       else setEvents([]);
+      return res;
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Verification failed");
     } finally {
@@ -192,8 +194,8 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
         <h1>The <em>Verifier&apos;s</em> Tribunal.</h1>
         <p>
           Pick a credential, inspect its contents, and submit it to the tribunal. Alter any field before
-          submitting to simulate a forgery — the on-chain hash will refuse anything that doesn&apos;t
-          match the version the issuer originally anchored.
+          submitting to simulate a forgery — the verification checklist will show exactly which
+          evidence disagreed with the issuer&apos;s blockchain anchor.
         </p>
       </section>
 
@@ -294,7 +296,7 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
                 <StatusBadge status={result.status} />
               </div>
               <p className="verdict-narrative">{verdictNarrative(result.status)}</p>
-              <ScoreBar score={result.score} breakdown={result.breakdown} />
+              <VerificationChecklist status={result.status} checks={result.checks} breakdown={result.breakdown} />
               <div>
                 <h3>Of the predicates that disagreed</h3>
                 {result.reasons.length === 0 ? (

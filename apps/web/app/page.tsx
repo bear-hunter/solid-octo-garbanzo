@@ -22,7 +22,7 @@ const ROLES = [
     step: "— Estate the Third —",
     glyph: "☞",
     title: "Verifier",
-    body: "Inspect any credential against its on-chain anchor and receive an explainable six-part trust score, with the failing predicate named in plain language.",
+    body: "Inspect any credential against its on-chain anchor and receive an explainable six-part verification checklist, with failed or unavailable predicates named in plain language.",
     cta: "ENTER THE TRIBUNAL →",
   },
 ];

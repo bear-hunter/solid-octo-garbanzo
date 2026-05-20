@@ -26,7 +26,10 @@ export type CredentialSubject = z.infer<typeof CredentialSubjectSchema>;
 export type AcademicCredential = z.infer<typeof AcademicCredentialSchema>;
 export type VerificationStatus = "valid" | "invalid" | "revoked" | "unknownIssuer" | "tampered" | "unavailable";
 export type TrustScoreBreakdown = { schema: number; issuer: number; signature: number; contentIntegrity: number; onChain: number; revocation: number };
-export type VerificationResult = { status: VerificationStatus; valid: boolean; score: number; breakdown: TrustScoreBreakdown; reasons: string[]; credential?: AcademicCredential };
+export type VerificationCheckStatus = "verified" | "warning" | "failed" | "unavailable" | "not_applicable";
+export type VerificationCheckKey = keyof TrustScoreBreakdown;
+export type VerificationCheckDetail = { key: VerificationCheckKey; status: VerificationCheckStatus; message: string };
+export type VerificationResult = { status: VerificationStatus; valid: boolean; score: number; breakdown: TrustScoreBreakdown; checks: VerificationCheckDetail[]; reasons: string[]; credential?: AcademicCredential };
 export type InstitutionRecord = { did: string; name: string; active: boolean; publicKeyJwk: JWK };
 export type CredentialRecord = { id: string; jwt: string; credential: AcademicCredential; cid: string; hash: string; issuerDid: string; subjectDid: string; revoked?: boolean; reason?: string };
 export type AuditEvent = { id: string; credentialId: string; type: string; actor: string; note: string; createdAt: string; metadata?: Record<string, unknown> };
@@ -73,18 +76,37 @@ export async function verifyCredential(input: { jwt?: string; credential?: Acade
   const breakdown: TrustScoreBreakdown = { schema: 0, issuer: 0, signature: 0, contentIntegrity: 0, onChain: 0, revocation: 0 };
   const reasons: string[] = [];
   let credential = input.credential;
-  if (input.unavailable) return { status: "unavailable", valid: false, score: 0, breakdown, reasons: ["Credential content is unavailable"] };
+  if (input.unavailable) return { status: "unavailable", valid: false, score: 0, breakdown, checks: makeChecks("unavailable", breakdown, ["Credential content is unavailable"]), reasons: ["Credential content is unavailable"] };
   try {
     if (input.jwt && input.issuer) { credential = await verifyCredentialJwt(input.jwt, input.issuer.publicKeyJwk); breakdown.signature = 20; }
     credential = AcademicCredentialSchema.parse(credential); breakdown.schema = 15;
-  } catch { reasons.push("Schema or signature verification failed"); return { status: "invalid", valid: false, score: 0, breakdown, reasons }; }
+  } catch { reasons.push("Schema or signature verification failed"); return { status: "invalid", valid: false, score: 0, breakdown, checks: makeChecks("invalid", breakdown, reasons), reasons }; }
   if (!input.issuer?.active || input.issuer.did !== credential.issuer) reasons.push("Issuer is not authorized"); else breakdown.issuer = 20;
   const h = hashHex(credential); if (input.storedHash && input.storedHash !== h) reasons.push("Credential content hash does not match registry"); else breakdown.contentIntegrity = 20;
   if (input.expectedCid && input.cid && input.expectedCid !== input.cid) reasons.push("CID does not match registry"); else breakdown.onChain = 15;
   if (input.revoked) reasons.push("Credential has been revoked"); else breakdown.revocation = 10;
   const score = Object.values(breakdown).reduce((a,b)=>a+b,0);
   const status: VerificationStatus = input.revoked ? "revoked" : reasons.some(r=>r.includes("Issuer")) ? "unknownIssuer" : reasons.some(r=>r.includes("hash") || r.includes("CID")) ? "tampered" : reasons.length ? "invalid" : "valid";
-  return { status, valid: status === "valid", score, breakdown, reasons, credential };
+  return { status, valid: status === "valid", score, breakdown, checks: makeChecks(status, breakdown, reasons), reasons, credential };
+}
+
+function makeChecks(status: VerificationStatus, breakdown: TrustScoreBreakdown, reasons: string[]): VerificationCheckDetail[] {
+  const failed = (text: string) => reasons.some((reason) => reason.toLowerCase().includes(text));
+  if (status === "unavailable") {
+    return (["signature", "issuer", "onChain", "revocation", "contentIntegrity", "schema"] as VerificationCheckKey[]).map((key) => ({
+      key,
+      status: "unavailable",
+      message: "This check could not be completed because credential content or registry evidence was unavailable.",
+    }));
+  }
+  return [
+    { key: "signature", status: breakdown.signature > 0 ? "verified" : "failed", message: breakdown.signature > 0 ? "Signature matches the credential payload." : "Signature verification failed or was not available." },
+    { key: "issuer", status: breakdown.issuer > 0 ? "verified" : "failed", message: breakdown.issuer > 0 ? "Issuer DID is active and matches the credential." : "Issuer DID is missing, inactive, or does not match the credential." },
+    { key: "onChain", status: breakdown.onChain > 0 ? "verified" : "failed", message: breakdown.onChain > 0 ? "Credential anchor matches the registry record." : "Credential anchor or CID does not match the registry." },
+    { key: "revocation", status: breakdown.revocation > 0 ? "verified" : "failed", message: breakdown.revocation > 0 ? "Credential is not revoked." : "Credential has been revoked." },
+    { key: "contentIntegrity", status: breakdown.contentIntegrity > 0 ? "verified" : "failed", message: breakdown.contentIntegrity > 0 ? "Credential content matches the anchored hash." : "Credential content hash does not match the registry." },
+    { key: "schema", status: breakdown.schema > 0 && !failed("schema") ? "verified" : "failed", message: breakdown.schema > 0 && !failed("schema") ? "Credential is well-formed." : "Credential schema or validity verification failed." },
+  ];
 }
 
 export * from "./adapters";

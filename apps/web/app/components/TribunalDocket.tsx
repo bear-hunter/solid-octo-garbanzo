@@ -6,7 +6,6 @@ export type DocketEntry = {
   id: string;
   holderName: string;
   status: string;
-  score: number;
   at: string;
   payload: string;
 };
@@ -63,7 +62,6 @@ export function TribunalDocket({ entries, onReVerify, onClear }: Props) {
             <li key={entry.id} className="docket-row">
               <span className={`badge ${entry.status}`}>{entry.status}</span>
               <span className="holder-name">{entry.holderName || "—"}</span>
-              <span className="score">{entry.score}/100</span>
               <span className="when">{new Date(entry.at).toLocaleTimeString()}</span>
               <button type="button" className="ghost re-verify" onClick={() => onReVerify(entry)} aria-label="Re-verify">
                 ↻

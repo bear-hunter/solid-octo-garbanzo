@@ -234,7 +234,19 @@ export function createCredentialService(deps: ServiceDeps) {
     if (!credential && input.cid) credential = await storage.get(input.cid);
     const offChain = credential ?? (row ? (await storage.get(row.cid)) ?? row.credential : undefined);
     if (!offChain) {
-      return { status: "unavailable", valid: false, score: 0, breakdown: emptyBreakdown(), reasons: ["Credential content is unavailable"] };
+      const breakdown = emptyBreakdown();
+      return {
+        status: "unavailable",
+        valid: false,
+        score: 0,
+        breakdown,
+        checks: (["signature", "issuer", "onChain", "revocation", "contentIntegrity", "schema"] as const).map((key) => ({
+          key,
+          status: "unavailable",
+          message: "This check could not be completed because credential content or registry evidence was unavailable.",
+        })),
+        reasons: ["Credential content is unavailable"],
+      };
     }
 
     const hash = hashHex(offChain);
