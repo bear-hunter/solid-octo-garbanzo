@@ -244,12 +244,15 @@ export function createCredentialService(deps: ServiceDeps) {
     // Idempotent and additive: keep any credentials the user already issued.
     // If Ada Lovelace's presentation credential is already present and active,
     // return it; otherwise add it fresh without resetting other data.
-    const existing = [...repo.credentials.values()].find(
+    const candidates = [...repo.credentials.values()].filter(
       (c) =>
         c.credential.credentialSubject.name === "Ada Lovelace" &&
-        c.credential.credentialSubject.studentId === "NSU-2026-001" &&
-        !c.revoked,
+        c.credential.credentialSubject.studentId === "NSU-2026-001",
     );
+    // Strictly idempotent: if any Ada Lovelace presentation credential exists
+    // (active or revoked), return the active one if available, else the first
+    // revoked one. Never adds another anchor on repeat clicks.
+    const existing = candidates.find((c) => !c.revoked) ?? candidates[0];
     if (existing) {
       const institution = repo.institutions.get(existing.issuerDid);
       const student = repo.students.get(existing.subjectDid);
