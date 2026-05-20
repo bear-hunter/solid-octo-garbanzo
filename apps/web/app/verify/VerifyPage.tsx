@@ -1,8 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import ScoreBar from "../components/ScoreBar";
+
+type CredentialSubject = {
+  id: string;
+  studentId: string;
+  name: string;
+  degree: string;
+  major: string;
+  graduationDate: string;
+  gpa?: number;
+};
+
+type AcademicCredential = {
+  "@context": string[];
+  id: string;
+  type: string[];
+  issuer: string;
+  issuanceDate: string;
+  credentialSubject: CredentialSubject;
+};
+
+type CredentialRow = {
+  id: string;
+  revoked?: boolean;
+  credential: AcademicCredential;
+};
 
 type VerifyResult = {
   status: string;
@@ -12,11 +37,16 @@ type VerifyResult = {
   breakdown?: Record<string, number>;
   credential?: { credentialSubject: { name: string; degree: string; major: string } };
 };
+
 type AuditEvent = { id: string; type: string; note: string; createdAt: string };
-type CredentialRow = {
-  id: string;
-  revoked?: boolean;
-  credential: { credentialSubject: { name: string; degree: string; studentId: string } };
+
+type EditableSubject = {
+  studentId: string;
+  name: string;
+  degree: string;
+  major: string;
+  graduationDate: string;
+  gpa: string;
 };
 
 async function api(path: string, body?: unknown) {
@@ -30,6 +60,17 @@ function describeRow(row: CredentialRow) {
   const s = row.credential.credentialSubject;
   const status = row.revoked ? "revoked" : "active";
   return `${s.name} — ${s.degree} (${s.studentId}) · ${status}`;
+}
+
+function subjectToEditable(s: CredentialSubject): EditableSubject {
+  return {
+    studentId: s.studentId,
+    name: s.name,
+    degree: s.degree,
+    major: s.major,
+    graduationDate: s.graduationDate,
+    gpa: s.gpa !== undefined ? String(s.gpa) : "",
+  };
 }
 
 function verdictNarrative(status: string): string {
@@ -54,19 +95,45 @@ function verdictNarrative(status: string): string {
 export default function VerifyPage({ shareId }: { shareId?: string }) {
   const [rows, setRows] = useState<CredentialRow[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [payload, setPayload] = useState(shareId ? JSON.stringify({ shareId }, null, 2) : "");
+  const [edits, setEdits] = useState<EditableSubject | null>(null);
+  const [original, setOriginal] = useState<EditableSubject | null>(null);
+  const [rawPayload, setRawPayload] = useState(shareId ? JSON.stringify({ shareId }, null, 2) : "");
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const selectedRow = useMemo(() => rows.find((r) => r.id === selectedId), [rows, selectedId]);
+
+  const changedFields = useMemo(() => {
+    if (!edits || !original) return new Set<keyof EditableSubject>();
+    const out = new Set<keyof EditableSubject>();
+    (Object.keys(edits) as Array<keyof EditableSubject>).forEach((key) => {
+      if (edits[key] !== original[key]) out.add(key);
+    });
+    return out;
+  }, [edits, original]);
+
+  const hasEdits = changedFields.size > 0;
+
   async function refresh() {
     const data: CredentialRow[] = await api("/api/credentials");
     setRows(data);
-    if (!selectedId && !shareId && data[0]) {
-      setSelectedId(data[0].id);
-      if (!payload) setPayload(JSON.stringify({ id: data[0].id }, null, 2));
-    }
+    if (!selectedId && !shareId && data[0]) chooseCredential(data[0].id, data);
+  }
+
+  function chooseCredential(id: string, source?: CredentialRow[]) {
+    const list = source ?? rows;
+    const row = list.find((r) => r.id === id);
+    if (!row) return;
+    setSelectedId(id);
+    const initial = subjectToEditable(row.credential.credentialSubject);
+    setEdits(initial);
+    setOriginal(initial);
+  }
+
+  function resetFields() {
+    if (original) setEdits(original);
   }
 
   useEffect(() => {
@@ -74,11 +141,6 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
     if (shareId) verify({ shareId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareId]);
-
-  function chooseCredential(id: string) {
-    setSelectedId(id);
-    setPayload(id ? JSON.stringify({ id }, null, 2) : "");
-  }
 
   async function verify(body: unknown) {
     setBusy(true);
@@ -95,18 +157,32 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
     }
   }
 
-  async function verifyTampered() {
-    const targetId = selectedId || rows[0]?.id;
-    if (!targetId) return;
-    const full = await api("/api/credentials");
-    const target = full.find((r: { id: string }) => r.id === targetId);
-    if (!target) return;
-    const tampered = {
-      ...target.credential,
-      credentialSubject: { ...target.credential.credentialSubject, degree: "Doctor of Philosophy" },
+  async function verifySelected() {
+    if (!selectedRow || !edits) return;
+    if (!hasEdits) {
+      await verify({ id: selectedRow.id });
+      setMessage("Submitted the credential as recorded.");
+      return;
+    }
+    const altered: AcademicCredential = {
+      ...selectedRow.credential,
+      credentialSubject: {
+        ...selectedRow.credential.credentialSubject,
+        studentId: edits.studentId,
+        name: edits.name,
+        degree: edits.degree,
+        major: edits.major,
+        graduationDate: edits.graduationDate,
+        gpa: edits.gpa.trim() === "" ? undefined : Number(edits.gpa),
+      },
     };
-    await verify({ id: targetId, credential: tampered });
-    setMessage("Submitted an altered copy — the verifier should flag it as tampered.");
+    await verify({ id: selectedRow.id, credential: altered });
+    const list = [...changedFields].join(", ");
+    setMessage(`Submitted an altered copy (changed: ${list}). The on-chain hash should refuse it.`);
+  }
+
+  function setField(key: keyof EditableSubject, value: string) {
+    setEdits((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
 
   return (
@@ -115,9 +191,9 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
         <div className="kicker">— Estate the Third · The Tribunal —</div>
         <h1>The <em>Verifier&apos;s</em> Tribunal.</h1>
         <p>
-          Submit a credential — by JWT, CID, ID, or share-link — and the tribunal renders an
-          explainable six-part trust score, with the failing predicate named in plain language and
-          pinpointed to the contract call that disagreed.
+          Pick a credential, inspect its contents, and submit it to the tribunal. Alter any field before
+          submitting to simulate a forgery — the on-chain hash will refuse anything that doesn&apos;t
+          match the version the issuer originally anchored.
         </p>
       </section>
 
@@ -126,6 +202,7 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
       <section className="grid cols-2 rise d2" style={{ alignItems: "start" }}>
         <div className="card stack">
           <h2>Submission to the <em>Tribunal</em></h2>
+
           <label>Choose a credential on record</label>
           <select
             value={selectedId}
@@ -139,27 +216,72 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
               </option>
             ))}
           </select>
-          <p className="muted">Or paste a JSON object with one key — <code>id</code>, <code>cid</code>, <code>jwt</code>, or <code>shareId</code>.</p>
-          <textarea value={payload} onChange={(e) => setPayload(e.target.value)} placeholder='{"id":"urn:uuid:…"}' />
-          <div className="btn-row">
-            <button disabled={busy} onClick={() => { try { verify(JSON.parse(payload || "{}")); } catch { setMessage("Input is not valid JSON."); } }}>
-              Verify Credential
-            </button>
-            <button className="ghost" disabled={busy || rows.length === 0} onClick={verifyTampered}>
-              Demo: Verify Tampered Copy
-            </button>
-            <button
-              className="ghost"
-              disabled={busy}
-              onClick={async () => {
-                await api("/api/demo/reset", {});
-                await refresh();
-                setMessage("Presentation records loaded — pick one from the dropdown above.");
-              }}
-            >
-              Load Sample Records
-            </button>
-          </div>
+
+          {edits && selectedRow && (
+            <>
+              <p className="muted" style={{ marginTop: "1rem" }}>
+                These are the credential&apos;s contents as the issuer anchored them. Edit any field to
+                submit an altered copy — the verifier will catch the change because the document hash
+                will no longer match what&apos;s on the blockchain.
+              </p>
+              <div className="tamper-grid">
+                <div>
+                  <label>Student name {changedFields.has("name") && <span className="diff">· altered</span>}</label>
+                  <input value={edits.name} onChange={(e) => setField("name", e.target.value)} className={changedFields.has("name") ? "altered" : ""} />
+                </div>
+                <div>
+                  <label>Degree {changedFields.has("degree") && <span className="diff">· altered</span>}</label>
+                  <input value={edits.degree} onChange={(e) => setField("degree", e.target.value)} className={changedFields.has("degree") ? "altered" : ""} />
+                </div>
+                <div>
+                  <label>Major {changedFields.has("major") && <span className="diff">· altered</span>}</label>
+                  <input value={edits.major} onChange={(e) => setField("major", e.target.value)} className={changedFields.has("major") ? "altered" : ""} />
+                </div>
+                <div>
+                  <label>Graduation {changedFields.has("graduationDate") && <span className="diff">· altered</span>}</label>
+                  <input type="date" value={edits.graduationDate} onChange={(e) => setField("graduationDate", e.target.value)} className={changedFields.has("graduationDate") ? "altered" : ""} />
+                </div>
+                <div>
+                  <label>GPA {changedFields.has("gpa") && <span className="diff">· altered</span>}</label>
+                  <input value={edits.gpa} onChange={(e) => setField("gpa", e.target.value)} className={changedFields.has("gpa") ? "altered" : ""} />
+                </div>
+                <div>
+                  <label>Student ID {changedFields.has("studentId") && <span className="diff">· altered</span>}</label>
+                  <input value={edits.studentId} onChange={(e) => setField("studentId", e.target.value)} className={changedFields.has("studentId") ? "altered" : ""} />
+                </div>
+              </div>
+              <div className="btn-row">
+                <button disabled={busy} onClick={verifySelected}>
+                  {hasEdits ? `Submit Altered Copy (${changedFields.size} field${changedFields.size === 1 ? "" : "s"} changed)` : "Verify as Recorded"}
+                </button>
+                <button className="ghost" disabled={!hasEdits || busy} onClick={resetFields}>
+                  Reset Fields
+                </button>
+                <button
+                  className="ghost"
+                  disabled={busy}
+                  onClick={async () => {
+                    await api("/api/demo/reset", {});
+                    await refresh();
+                    setMessage("Presentation records loaded — pick one from the dropdown above.");
+                  }}
+                >
+                  Load Sample Records
+                </button>
+              </div>
+            </>
+          )}
+
+          <details className="raw-json" style={{ marginTop: "1.2rem" }}>
+            <summary>Advanced — submit raw JSON</summary>
+            <p className="muted">For verifying a shareId, CID, or JWT directly. Accepts one of <code>id</code>, <code>cid</code>, <code>jwt</code>, or <code>shareId</code>.</p>
+            <textarea value={rawPayload} onChange={(e) => setRawPayload(e.target.value)} placeholder='{"shareId":"…"}' />
+            <div className="btn-row">
+              <button disabled={busy} onClick={() => { try { verify(JSON.parse(rawPayload || "{}")); } catch { setMessage("Input is not valid JSON."); } }}>
+                Verify Raw Payload
+              </button>
+            </div>
+          </details>
         </div>
 
         <div className="card stack">
@@ -187,7 +309,7 @@ export default function VerifyPage({ shareId }: { shareId?: string }) {
               </div>
               {result.credential && (
                 <p className="muted">
-                  {result.credential.credentialSubject.name} — {result.credential.credentialSubject.degree},{" "}
+                  Inspected: {result.credential.credentialSubject.name} — {result.credential.credentialSubject.degree},{" "}
                   {result.credential.credentialSubject.major}
                 </p>
               )}
